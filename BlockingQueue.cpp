@@ -32,7 +32,11 @@ public:
         cond.notify_one();
     }
 
-    T pop() {
+    T front() {
+
+    }
+
+    void pop() {
 
         std::unique_lock<std::mutex> lock(_queueMutex);
         cond.wait(lock, [this]() {
@@ -45,7 +49,10 @@ public:
         lock.unlock();
         cond.notify_one();
 
-        return item;
+    }
+
+    int size() {
+        return _queue.size();
     }
 };
 
