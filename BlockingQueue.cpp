@@ -25,7 +25,6 @@ public:
             });
 
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-        std::cout << "Producing" << std::endl;
         _queue.push(item);
 
         lock.unlock();
@@ -33,7 +32,12 @@ public:
     }
 
     T front() {
+        std::unique_lock<std::mutex> lock(_queueMutex);
+        cond.wait(lock, [this]() {
+            return !_queue.empty();
+            });
 
+        return _queue.front();
     }
 
     void pop() {
@@ -52,6 +56,7 @@ public:
     }
 
     int size() {
+        std::lock_guard<std::mutex> lock(_queueMutex);
         return _queue.size();
     }
 };
@@ -65,6 +70,7 @@ int main(int argc, const char* argv[]) {
     /*Producer*/
     std::thread t1([&]() {
         for (int i = 0; i < 10; i++) {
+            std::cout << "Producing:" << i << std::endl;
             queue.push(i);
         }
         });
@@ -73,7 +79,8 @@ int main(int argc, const char* argv[]) {
     std::thread t2([&]() {
         //std::this_thread::sleep_for(std::chrono::milliseconds(500));
         for (int i = 0; i < 10; i++) {
-            int item = queue.pop();
+            int item = queue.front();
+            queue.pop();
             std::cout << "Consumed:" <<item<< std::endl;
         }
         });
